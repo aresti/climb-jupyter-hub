@@ -1,0 +1,19 @@
+---
+  - name: Playbook Install JupyterHub
+    hosts: jupyterhub
+    vars_files:
+      - vars.yml
+
+    tasks:
+      - name: Copy JupyterHub installation config
+        copy:
+          src: ./{{ config_filename }}
+          dest: ~/
+
+      - name: Copy JupyterHub installation config secrets
+        copy:
+          src: ./{{ config_secrets_filename }}
+          dest: ~/
+
+      - name: Helm upgrade jupyterhub
+        command: /snap/bin/microk8s helm3 upgrade --cleanup-on-fail {{ release_name }} jupyterhub/jupyterhub --namespace jhub --version={{ chart_version }} --values {{ config_filename }} --values {{ config_secrets_filename }}

@@ -1,0 +1,7 @@
+---
+username: ubuntu
+name_space: jhub
+chart_version: 1.2.0
+release_name: "{{ name_space }}-{{ chart_version }}"
+config_filename: jhub_config.yml
+config_secrets_filename: jhub_config_secrets.yml

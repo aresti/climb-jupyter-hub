@@ -1,0 +1,71 @@
+---
+  - name: Playbook install MicroK8s
+    hosts: jupyterhub
+    
+    tasks:
+      - name: Install microk8s
+        become: yes 
+        snap:
+          name: microk8s
+          classic: yes
+          channel: 1.21
+    
+      - name: Add user to microk8s group
+        become: yes 
+        user:
+          name: "{{ username }}"
+          append: yes
+          groups: microk8s
+
+      - name: Set ~/.kube caching dir ownership
+        become: yes 
+        file:
+          path: ~/.kube
+          owner: "{{ username }}"
+          recurse: yes
+
+      - name: Reset SSH connection to pickup new group
+        meta:
+          reset_connection
+      
+      - name: Register microk8s status
+        command: /snap/bin/microk8s status --wait-ready
+        register: microk8s_status
+
+      - name: microk8s enable dns
+        command: /snap/bin/microk8s enable dns
+        when: microk8s_status.stdout.split('addons:')[1].split(':')[1].find('dns') == -1
+
+      - name: microk8s enable helm3
+        command: /snap/bin/microk8s enable helm3
+        when: microk8s_status.stdout.split('addons:')[1].split(':')[1].find('helm3') == -1
+
+      - name: microk8s enable metallb
+        command: /snap/bin/microk8s enable metallb:10.0.0.100-10.0.0.200,147.188.173.249-147.188.173.249
+        when: microk8s_status.stdout.split('addons:')[1].split(':')[1].find('metallb') == -1
+
+      - name: enable iscsid.service
+        become: yes 
+        systemd:
+          name: iscsid.service
+          enabled: yes
+
+      - name: microk8s enable openebs
+        command: /snap/bin/microk8s enable openebs
+        when: microk8s_status.stdout.split('addons:')[1].split(':')[1].find('openebs') == -1
+            
+      - name: create PVC storage dir
+        become: yes
+        file:
+          path: /pvc_storage
+          state: directory
+          owner: "{{ username }}"
+          group: microk8s 
+
+      - name: Copy storage config
+        copy:
+          src: ./local-storage-dir.yml
+          dest: ~/
+      
+      - name: Apply storage config
+        command: /snap/bin/microk8s.kubectl apply -f local-storage-dir.yml 

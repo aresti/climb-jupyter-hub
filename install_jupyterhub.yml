@@ -1,0 +1,38 @@
+---
+  - name: Playbook Install JupyterHub
+    hosts: jupyterhub
+    vars_files:
+      - vars.yml
+
+    tasks:
+      - name: Register help repo list 
+        command: /snap/bin/microk8s helm3 repo list
+        register: microk8s_helm_repo_list
+
+      - name: Add jupyterhub repo to helm
+        command: /snap/bin/microk8s helm3 repo add jupyterhub https://jupyterhub.github.io/helm-chart/
+        when: microk8s_helm_repo_list.stdout.find('jupyterhub') == -1
+
+      - name: Update helm repos
+        command: /snap/bin/microk8s helm3 repo update
+
+      - name: Copy JupyterHub installation config
+        copy:
+          src: ./{{ config_filename }}
+          dest: ~/
+
+      - name: Copy JupyterHub installation config secrets
+        copy:
+          src: ./{{ config_secrets_filename }}
+          dest: ~/
+
+      - name: Register helm list
+        command: /snap/bin/microk8s helm3 list --namespace {{ name_space }}  
+        register: helm_list
+
+      - name: Remove previous JupyterHub install
+        command: /snap/bin/microk8s helm3 delete {{ release_name }} --namespace {{ name_space }}
+        when: helm_list.stdout.find(release_name) != -1
+
+      - name: Helm install JupyterHub
+        command: /snap/bin/microk8s helm3 upgrade --cleanup-on-fail --install {{ release_name }} jupyterhub/jupyterhub --namespace {{ name_space }} --create-namespace --version={{ chart_version }} --values {{ config_filename }} --values {{ config_secrets_filename }}

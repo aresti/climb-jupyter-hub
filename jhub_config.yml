@@ -1,0 +1,39 @@
+# This file can update the JupyterHub Helm chart's default configuration values.
+#
+# For reference see the configuration reference and default values, but make
+# sure to refer to the Helm chart version of interest to you!
+#
+# Introduction to YAML:     https://www.youtube.com/watch?v=cdLNKUoMc6c
+# Chart config reference:   https://zero-to-jupyterhub.readthedocs.io/en/stable/resources/reference.html
+# Chart default values:     https://github.com/jupyterhub/zero-to-jupyterhub-k8s/blob/HEAD/jupyterhub/values.yaml
+# Available chart versions: https://jupyterhub.github.io/helm-chart/
+#
+proxy:
+  https:
+    enabled: true
+    hosts:
+      - jhub-test.climb.ac.uk
+    letsencrypt:
+      contactEmail: a.smith.20@bham.ac.uk 
+  service:
+    loadBalancerIP: 147.188.173.249
+
+singleuser:
+  defaultUrl: "/lab"
+  extraEnv:
+    JUPYTERHUB_SINGLEUSER_APP: "jupyter_server.serverapp.ServerApp"
+
+hub:
+  config:
+    Authenticator:
+      admin_users:
+        - andysmith
+      auto_login: true
+    GenericOAuthenticator:
+      oauth_callback_url: https://jhub-test.climb.ac.uk/hub/oauth_callback
+      authorize_url: https://bryn.climb.ac.uk/o/authorize/
+      token_url: https://bryn.climb.ac.uk/o/token/
+      userdata_url: https://bryn.climb.ac.uk/o/userinfo/
+      login_service: Bryn
+    JupyterHub:
+      authenticator_class: generic-oauth 
