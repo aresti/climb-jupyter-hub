@@ -37,3 +37,4 @@ hub:
       login_service: Bryn
     JupyterHub:
       authenticator_class: generic-oauth 
+      allow_named_servers: true

@@ -1,6 +1,8 @@
 ---
   - name: Playbook install MicroK8s
-    hosts: jupyterhub
+    hosts: jhub_nodes 
+    vars_files:
+      - vars.yml
     
     tasks:
       - name: Install microk8s
@@ -34,7 +36,7 @@
 
       - name: microk8s enable dns
         command: /snap/bin/microk8s enable dns
-        when: microk8s_status.stdout.split('addons:')[1].split(':')[1].find('dns') == -1
+        when: ansible_hostname in groups['jhub_primary_master'] and microk8s_status.stdout.split('addons:')[1].split(':')[1].find('dns') == -1
 
       - name: microk8s enable helm3
         command: /snap/bin/microk8s enable helm3
@@ -42,7 +44,7 @@
 
       - name: microk8s enable metallb
         command: /snap/bin/microk8s enable metallb:10.0.0.100-10.0.0.200,147.188.173.249-147.188.173.249
-        when: microk8s_status.stdout.split('addons:')[1].split(':')[1].find('metallb') == -1
+        when: ansible_hostname in groups['jhub_primary_master'] and microk8s_status.stdout.split('addons:')[1].split(':')[1].find('metallb') == -1
 
       - name: enable iscsid.service
         become: yes 
@@ -53,14 +55,6 @@
       - name: microk8s enable openebs
         command: /snap/bin/microk8s enable openebs
         when: microk8s_status.stdout.split('addons:')[1].split(':')[1].find('openebs') == -1
-            
-      - name: create PVC storage dir
-        become: yes
-        file:
-          path: /pvc_storage
-          state: directory
-          owner: "{{ username }}"
-          group: microk8s 
 
       - name: Copy storage config
         copy:

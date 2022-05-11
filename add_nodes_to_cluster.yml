@@ -1,0 +1,23 @@
+---
+  - name: Playbook add nodes to cluser
+    hosts: jhub_nodes,!jhub_primary_master
+    serial: 1
+    vars_files:
+      - vars.yml
+    
+    tasks:
+      - name: initialise master node
+        command: /snap/bin/microk8s add-node
+        delegate_to: 147.188.173.249 
+        run_once: true
+        register: joining_instructions
+
+      - name: register existing nodes
+        command: /snap/bin/microk8s kubectl get nodes -o wide
+        delegate_to: 147.188.173.249
+        run_once: true
+        register: existing_nodes
+  
+      - name: join additional nodes
+        command: "{{ '/snap/bin/' + joining_instructions.stdout.split('\n')[1] }}"
+        when: existing_nodes.stdout.find(ansible_hostname) == -1
