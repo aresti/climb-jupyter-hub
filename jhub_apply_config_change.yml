@@ -5,10 +5,10 @@
       - vars.yml
 
     tasks:
-      - name: Copy JupyterHub installation config
-        copy:
-          src: ./{{ config_filename }}
-          dest: ~/
+      - name: Update config file
+        template:
+          src: "{{ config_template }}"
+          dest: "{{ config_filename }}"
 
       - name: Copy JupyterHub installation config secrets
         copy:

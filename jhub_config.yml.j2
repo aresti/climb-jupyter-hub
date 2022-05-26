@@ -12,19 +12,25 @@ proxy:
   https:
     enabled: true
     hosts:
-      - jhub-test.climb.ac.uk
+      - {{ host_name }} 
     letsencrypt:
-      contactEmail: a.smith.20@bham.ac.uk 
+      contactEmail: {{ admin_email }} 
   service:
-    loadBalancerIP: 147.188.173.249
+    loadBalancerIP: {{ load_balancer_ip }}
 
 singleuser:
   defaultUrl: "/lab"
   extraEnv:
     JUPYTERHUB_SINGLEUSER_APP: "jupyter_server.serverapp.ServerApp"
   image:
-    name: aresti/climbbase
-    tag: "0.1"
+    name: {{ image_name }} 
+    tag: "{{ image_tag }}"
+  profileList:
+    - display_name: "GPU Server"
+      description: "Spawns a notebook server with access to a GPU"
+      kubespawner_override:
+        extra_resource_limits:
+          nvidia.com/gpu: "1"
 
 hub:
   config:

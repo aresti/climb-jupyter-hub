@@ -3,5 +3,11 @@ username: ubuntu
 name_space: jhub
 chart_version: 1.2.0
 release_name: "{{ name_space }}-{{ chart_version }}"
+config_template: jhub_config.yml.j2
 config_filename: jhub_config.yml
 config_secrets_filename: jhub_config_secrets.yml
+load_balancer_ip: 147.188.173.123
+host_name: jhub-test.climb.ac.uk
+admin_email: a.smith.20@bham.ac.uk
+image_name: aresti/climbbase
+image_tag: 0.1

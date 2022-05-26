@@ -16,10 +16,10 @@
       - name: Update helm repos
         command: /snap/bin/microk8s helm3 repo update
 
-      - name: Copy JupyterHub installation config
-        copy:
-          src: ./{{ config_filename }}
-          dest: ~/
+      - name: Update config file
+        template:
+          src: "{{ config_template }}"
+          dest: "{{ config_filename }}"
 
       - name: Copy JupyterHub installation config secrets
         copy:
