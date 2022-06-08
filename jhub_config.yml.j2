@@ -35,8 +35,6 @@ singleuser:
 hub:
   config:
     Authenticator:
-      admin_users:
-        - andysmith
       auto_login: true
     GenericOAuthenticator:
       oauth_callback_url: https://jhub-test.climb.ac.uk/hub/oauth_callback
@@ -44,6 +42,9 @@ hub:
       token_url: https://bryn.climb.ac.uk/o/token/
       userdata_url: https://bryn.climb.ac.uk/o/userinfo/
       login_service: Bryn
+      scope: ['openid', 'profile', 'email', 'quota', 'groups']
+      admin_groups: ['admin']
+      allowed_groups: ['jhub_access']
     JupyterHub:
       authenticator_class: generic-oauth 
       allow_named_servers: true
