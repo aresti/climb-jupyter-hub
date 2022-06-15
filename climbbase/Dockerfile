@@ -9,3 +9,9 @@ RUN apt-get update && \
     wget https://download2.rstudio.org/server/bionic/amd64/rstudio-server-2022.02.2-485-amd64.deb && \
     gdebi --n rstudio-server-2022.02.2-485-amd64.deb
 USER $NB_USER
+
+# base conda packages
+RUN conda install nb_conda_kernels
+
+# files for home
+ADD --chown=jovyan homesync /tmp/homesync
