@@ -10,4 +10,4 @@ load_balancer_ip: 147.188.173.123
 host_name: jhub-test.climb.ac.uk
 admin_email: a.smith.20@bham.ac.uk
 image_name: aresti/climbbase
-image_tag: 0.1
+image_tag: 1.1.2

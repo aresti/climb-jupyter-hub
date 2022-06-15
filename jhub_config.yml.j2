@@ -23,28 +23,67 @@ singleuser:
   extraEnv:
     JUPYTERHUB_SINGLEUSER_APP: "jupyter_server.serverapp.ServerApp"
   image:
-    name: {{ image_name }} 
+    name: {{ image_name }}
     tag: "{{ image_tag }}"
   profileList:
-    - display_name: "GPU Server"
-      description: "Spawns a notebook server with access to a GPU"
-      kubespawner_override:
-        extra_resource_limits:
-          nvidia.com/gpu: "1"
+    - display_name: "Standard Server"
+      description: "Spawns a standard notebook server"
+  lifecycleHooks:
+    postStart:
+      exec:
+        command: ["cp", "-r", "/tmp/homesync/.", "./"]
 
 hub:
   config:
     Authenticator:
       auto_login: true
+      enable_auth_state: true
     GenericOAuthenticator:
       oauth_callback_url: https://jhub-test.climb.ac.uk/hub/oauth_callback
       authorize_url: https://bryn.climb.ac.uk/o/authorize/
       token_url: https://bryn.climb.ac.uk/o/token/
       userdata_url: https://bryn.climb.ac.uk/o/userinfo/
       login_service: Bryn
-      scope: ['openid', 'profile', 'email', 'quota', 'groups']
-      admin_groups: ['admin']
-      allowed_groups: ['jhub_access']
+      scope: ["openid", "profile", "email", "quota", "groups"]
+      admin_groups: ["admin"]
+      allowed_groups: ["jhub_access"]
     JupyterHub:
-      authenticator_class: generic-oauth 
+      authenticator_class: generic-oauth
       allow_named_servers: true
+  extraConfig:
+    myConfig.py: |
+      async def custom_options_form(spawner):
+          username = spawner.user.name
+          auth_state = await spawner.user.get_auth_state()
+          user_details = auth_state["oauth_user"]
+          gpu_access = user_details.get("gpu_access", False)
+
+          # Dynamically update profile_list based on user
+          if gpu_access:
+              spawner.log.info(f"GPU access options added for {username}.")
+              spawner.profile_list.extend(
+                  [
+                      {
+                          'display_name': 'GPU server',
+                          'description': 'Spawns a notebook server with access to a GPU',
+                          'slug': 'gpu',
+                          'kubespawner_override': {
+                              'extra_resource_limits': {
+                                  'nvidia.com/gpu': '1',
+                              },
+                          },
+                      },
+                  ]
+              )
+          else:
+              spawner.log.info(f"No GPU access for {username}")
+
+          # Let KubeSpawner inspect profile_list and decide what to return, it
+          # will return a falsy blank string if there is no profile_list,
+          # which makes no options form be presented.
+          #
+          # ref: https://github.com/jupyterhub/kubespawner/blob/37a80abb0a6c826e5c118a068fa1cf2725738038/kubespawner/spawner.py#L1885-L1935
+          return spawner._options_form_default()
+        
+      # Don't forget to ask KubeSpawner to make use of this custom hook
+      c.KubeSpawner.options_form = custom_options_form
