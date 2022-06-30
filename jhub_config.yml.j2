@@ -44,7 +44,7 @@ hub:
       token_url: https://bryn.climb.ac.uk/o/token/
       userdata_url: https://bryn.climb.ac.uk/o/userinfo/
       login_service: Bryn
-      scope: ["openid", "profile", "email", "quota", "groups"]
+      scope: ["openid", "profile", "email", "quota", "groups", "s3"]
       admin_groups: ["admin"]
       allowed_groups: ["jhub_access"]
     JupyterHub:
@@ -58,13 +58,23 @@ hub:
           user_details = auth_state["oauth_user"]
           gpu_access = user_details.get("gpu_access", False)
 
+          # Declare the common profile list for all users
+          spawner.profile_list = [
+              {
+                  'display_name': 'Standard server',
+                  'description': 'Spawns a standard notebook server', 
+                  'slug': 'standard',
+                  'default': True,
+              },
+          ]
+
           # Dynamically update profile_list based on user
           if gpu_access:
               spawner.log.info(f"GPU access options added for {username}.")
               spawner.profile_list.extend(
                   [
                       {
-                          'display_name': 'GPU server',
+                          'display_name': 'GPU Server',
                           'description': 'Spawns a notebook server with access to a GPU',
                           'slug': 'gpu',
                           'kubespawner_override': {
@@ -87,3 +97,13 @@ hub:
         
       # Don't forget to ask KubeSpawner to make use of this custom hook
       c.KubeSpawner.options_form = custom_options_form
+
+
+      # Pre-spawn, env vars
+      async def pre_spawn_hook(spawner):
+          auth_state = await spawner.user.get_auth_state()
+          user_details = auth_state["oauth_user"]
+          spawner.environment["AWS_ACCESS_KEY_ID"] = user_details.get("s3_access_key", "")
+          spawner.environment["AWS_SECRET_ACCESS_KEY"] = user_details.get("s3_secret_key", "")
+      
+      c.KubeSpawner.pre_spawn_hook = pre_spawn_hook
